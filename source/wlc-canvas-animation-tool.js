@@ -78,8 +78,6 @@ function wlcCanvasAnimationController(canvas, a, b) {
 	};
 
 	var state = {
-		animationIsStopped: true,
-		animationIsPaused: false, 
 		drawingFramesCountLimitation: NaN, // In case we need to draw like 1000 frames and then stop there for ever
 		timeOffset: 0 // in milliseconds
 	};
@@ -123,6 +121,41 @@ function wlcCanvasAnimationController(canvas, a, b) {
 
 
 	var requestAnimationFrame = window.requestAnimationFrame;
+	var thisInstance = this;
+
+	Object.defineProperty(state, 'animationIsStopped', {
+		configurable: false,
+		enumerable: true,
+		get: function () {
+			return privateData.state.animationIsStopped;
+		},
+		set: function (newValue) {
+			if (newValue) {
+				thisInstance.stopAnimation();
+			} else {
+				thisInstance.startAnimation();
+			}
+
+			return privateData.state.animationIsStopped;
+		}
+	});
+
+	Object.defineProperty(state, 'animationIsPaused', {
+		configurable: false,
+		enumerable: true,
+		get: function () {
+			return privateData.state.animationIsPaused;
+		},
+		set: function (newValue) {
+			if (newValue) {
+				thisInstance.pauseAnimation();
+			} else {
+				thisInstance.resumeAnimation();
+			}
+
+			return privateData.state.animationIsPaused;
+		}
+	});
 
 	_init.call(this, a, b);
 
