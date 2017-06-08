@@ -9,6 +9,26 @@
 </head>
 <body>
     <canvas id="my-canvas-1"></canvas>
-    <script src="first-taste.js"></script>
+
+    <script src="turning-hand.js"></script>
+    <script src="wlc-canvas-ripple.js"></script>
+    <script>
+        window.myAniCtrl = new window.wlcCanvasAnimationController('my-canvas-1',
+            {
+                drawingFramesCountLimit: NaN,
+                defaultBgColor: 'black'
+            }
+        );
+
+        window.myAniCtrl.config({
+            drawFrame: window.drawTurningHand
+        });
+
+         window.myAniCtrl.startAnimation();
+
+        setTimeout(function () {
+            setupRippleAnimation(window.myAniCtrl);
+        },5000);
+    </script>
 </body>
 </html>
