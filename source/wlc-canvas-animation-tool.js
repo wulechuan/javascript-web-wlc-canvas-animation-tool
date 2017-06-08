@@ -1,6 +1,14 @@
 (function (createWhatWeWant) {
 	window.wlcCanvasAnimationController = createWhatWeWant();
 })(function createWhatWeWant() {
+	var DOMPropertyNameForThisTypeOfInstance = 'wlcCanvasAnimationControllerInstance';
+	var isJQueryWrappedObjectOrAlike = 'isJQueryWrappedObjectOrAlike';
+	var isJQueryWrappedObject = 'isJQueryWrappedObject';
+	var isValidColor = 'isValidColor';
+	var animationIsStopped = 'animationIsStopped';
+	var animationIsPaused = 'animationIsPaused';
+
+
 	/**
 	 * Constructor for create an instant object that helps making canvas animations.
 	 * 
@@ -67,11 +75,11 @@
 
 		var privateData = {
 			elements: {
-				canvas: null
+				// canvas: null
 			},
 			data: {
 				canvasContextType: '2d',
-				canvasContext: null,
+				// canvasContext: null,
 			},
 			state: {
 				animationStartWallTime: NaN,
@@ -90,11 +98,18 @@
 
 
 
+		if ((typeof a === 'object' && typeof b === 'object' && a && b)
+			|| (typeof a === 'string' && typeof b === 'string')
+			|| (typeof a === 'function' && typeof b === 'function')
+		) {
+			console && console.error('Invalid arguments.');
+			return;
+		}
 
 		if (!(canvas instanceof Node)) {
 			if (typeof canvas === 'string') {
 				canvas = document.getElementById(canvas);
-			} else if (wlcCanvasAnimationController.isJQueryWrappedObjectOrAlike(canvas)) {
+			} else if (wlcCanvasAnimationController[isJQueryWrappedObjectOrAlike](canvas)) {
 				canvas = canvas[0];
 			} else {
 				canvas = null;
@@ -106,7 +121,11 @@
 			return;
 		}
 
-		if (!canvas.tagName.match(/canvas/i)) {
+		if (canvas.tagName.match(/canvas/i)) {
+			if (canvas[DOMPropertyNameForThisTypeOfInstance]) {
+				return canvas[DOMPropertyNameForThisTypeOfInstance];
+			}
+		} else {
 			var canvasContainer = canvas;
 			canvas = document.createElement('canvas');
 			canvasContainer.appendChild(canvas);
@@ -114,24 +133,22 @@
 
 		privateData.elements.canvas = canvas;
 
-		if ((typeof a === 'object' && typeof b === 'object' && a && b)
-			|| (typeof a === 'string' && typeof b === 'string')
-			|| (typeof a === 'function' && typeof b === 'function')
-		) {
-			console && console.error('Invalid arguments.');
-			return;
-		}
 
 
 
 		var requestAnimationFrame = window.requestAnimationFrame;
 		var thisInstance = this;
 
-		Object.defineProperty(state, 'animationIsStopped', {
-			// configurable: false,
+		Object.defineProperty(canvas, DOMPropertyNameForThisTypeOfInstance, {
+			enumerable: true,
+			writable: false,
+			value: thisInstance
+		});
+
+		Object.defineProperty(state, animationIsStopped, {
 			enumerable: true,
 			get: function () {
-				return privateData.state.animationIsStopped;
+				return privateData.state[animationIsStopped];
 			},
 			set: function (newValue) {
 				if (newValue) {
@@ -140,15 +157,14 @@
 					thisInstance.startAnimation();
 				}
 
-				return privateData.state.animationIsStopped;
+				return privateData.state[animationIsStopped];
 			}
 		});
 
-		Object.defineProperty(state, 'animationIsPaused', {
-			// configurable: false,
+		Object.defineProperty(state, animationIsPaused, {
 			enumerable: true,
 			get: function () {
-				return privateData.state.animationIsPaused;
+				return privateData.state[animationIsPaused];
 			},
 			set: function (newValue) {
 				if (newValue) {
@@ -157,7 +173,7 @@
 					thisInstance.resumeAnimation();
 				}
 
-				return privateData.state.animationIsPaused;
+				return privateData.state[animationIsPaused];
 			}
 		});
 
@@ -183,7 +199,7 @@
 		};
 
 
-		if (!privateData.state.animationIsStopped) {
+		if (!privateData.state[animationIsStopped]) {
 			thisInstance.startAnimation();
 		}
 
@@ -234,7 +250,7 @@
 
 
 			_inputTemp = options.bgColor;
-			if (wlcCanvasAnimationController.isValidColor(_inputTemp)) {
+			if (wlcCanvasAnimationController[isValidColor](_inputTemp)) {
 				state.bgColor = _inputTemp;
 			}
 
@@ -292,19 +308,19 @@
 			return privateData.elements.canvas;
 		}
 
-		function clearCanvas(shouldStopAnimation) {
+		function clearCanvas() {
+			return _clearCanvas.call(thisInstance).stopAnimation();
+		}
+		function _clearCanvas() {
 			var canvas = privateData.elements.canvas;
 			privateData.data.canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-
-			if (shouldStopAnimation) thisInstance.stopAnimation();
-
 			return thisInstance; // for chaining invocations
 		}
 
 		function stopAnimation(shouldClearCanvas) {
 			var privateState = privateData.state;
-			privateState.animationIsStopped = true;
-			privateState.animationIsPaused = false;
+			privateState[animationIsStopped] = true;
+			privateState[animationIsPaused] = false;
 
 			if (shouldClearCanvas) thisInstance.clearCanvas();
 
@@ -313,12 +329,12 @@
 
 		function startAnimation(shouldClearCanvasBeforeDrawing) {
 			var privateState = privateData.state;
-			if (!privateState.animationIsPaused && !privateState.animationIsStopped) {
+			if (privateState[animationIsPaused] === false && privateState[animationIsStopped] === false) {
 				return thisInstance;
 			}
 
-			privateState.animationIsPaused = false;
-			privateState.animationIsStopped = false;
+			privateState[animationIsPaused] = false;
+			privateState[animationIsStopped] = false;
 
 			privateState.animationStartWallTime = new Date().getTime() - state.timeOffset;
 			privateState.drawnFramesCount = 0;
@@ -330,18 +346,18 @@
 
 		function pauseAnimation() {
 			var privateState = privateData.state;
-			if (privateState.animationIsStopped) return;
+			if (privateState[animationIsStopped] === true) return;
 
-			privateState.animationIsPaused = true;
+			privateState[animationIsPaused] = true;
 
 			return thisInstance; // for chaining invocations
 		}
 
 		function resumeAnimation() {
 			var privateState = privateData.state;
-			if (privateState.animationIsStopped || !privateState.animationIsPaused) return;
+			if (privateState[animationIsStopped] === true || privateState[animationIsPaused] === false) return;
 
-			privateState.animationIsPaused = false;
+			privateState[animationIsPaused] = false;
 			boundMethods.drawNextFrame();
 
 			return thisInstance; // for chaining invocations
@@ -367,7 +383,11 @@
 
 		function _drawNextFrame(shouldClearCanvasBeforeDrawing) {
 			var privateState = privateData.state;
-			if (privateState.animationIsPaused || privateState.animationIsStopped) return;
+			if (   privateState[animationIsPaused] === true
+				|| privateState[animationIsStopped] === true
+			) {
+				return;
+			}
 
 			if (typeof thisInstance.drawFrame !== 'function') {
 				console.info(
@@ -399,7 +419,7 @@
 			var ctx = privateData.data.canvasContext;
 
 			if (state.bgColor === null || state.bgColor === '' || state.bgColor === false) {
-				thisInstance.clearCanvas();
+				_clearCanvas.call(thisInstance);
 			} else {
 				ctx.fillStyle = state.bgColor;
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -409,16 +429,16 @@
 		}
 	}
 
-	wlcCanvasAnimationController.isJQueryWrappedObjectOrAlike = function (object) {
-		return wlcCanvasAnimationController.isJQueryWrappedObject(object)
+	wlcCanvasAnimationController[isJQueryWrappedObjectOrAlike] = function (object) {
+		return wlcCanvasAnimationController[isJQueryWrappedObject](object)
 			|| object[0] instanceof Node;
 	};
 
-	wlcCanvasAnimationController.isJQueryWrappedObject = function (object) {
-		return !!Object.getPrototypeOf(object).jquery;
+	wlcCanvasAnimationController[isJQueryWrappedObject] = function (object) {
+		return !!Object.__proto__.jquery;
 	};
 
-	wlcCanvasAnimationController.isValidColor = function (color) {
+	wlcCanvasAnimationController[isValidColor] = function (color) {
 		return !!color;
 	};
 
