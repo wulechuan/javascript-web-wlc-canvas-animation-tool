@@ -71,7 +71,7 @@ function wlcSetupCanvasAnimation(canvas, contextType, drawingFunction, options) 
         drawingFramesCountLimit = NaN;
     } else {
         _inputTemp = parseInt(options.drawingFramesCountLimit);
-        if (!isNaN(_inputTemp)) wallTimeOffset = _inputTemp;
+        if (!isNaN(_inputTemp)) drawingFramesCountLimit = _inputTemp;
     }
 
 

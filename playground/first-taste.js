@@ -1,5 +1,5 @@
-wlcSetupCanvasAnimation('c1', letsHaveATryAndDrawSomething, {
-    drawingFramesCountLimit: 3,
+wlcSetupCanvasAnimation('my-canvas-1', letsHaveATryAndDrawSomething, {
+    drawingFramesCountLimit: 319,
     defaultBgColor: 'black'
 });
 
