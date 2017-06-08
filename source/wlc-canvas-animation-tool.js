@@ -68,8 +68,12 @@ function wlcCanvasAnimationController(canvas, a, b) {
 		data: {
 			canvasContextType: '2d',
 			canvasContext: null,
+		},
+		state: {
 			animationStartWallTime: NaN,
-			drawnFramesCount: 0
+			drawnFramesCount: 0,
+			animationIsStopped: true,
+			animationIsPaused: false
 		}
 	};
 
@@ -135,14 +139,14 @@ function wlcCanvasAnimationController(canvas, a, b) {
 	this.resumeAnimation = resumeAnimation.bind(this);
 
 	this.drawOneFrame = drawOneFrame.bind(this);
-	this.drawOneFrameOnTime = drawOneFrameOnTime.bind(this);
+	this.drawOneFrameOnTime = drawOneFrameOnTimeViaMethod.bind(this);
 
 	var boundMethods = {
 		drawNextFrame: _drawNextFrame.bind(this)
 	};
 
 
-	if (!state.animationIsStopped) {
+	if (!privateData.state.animationIsStopped) {
 		this.startAnimation();
 	}
 
@@ -226,10 +230,24 @@ function wlcCanvasAnimationController(canvas, a, b) {
 	}
 
 	function getData() {
-		var copy = {};
-		for (var key in privateData) {
-			copy[key] = privateData[key];
+		var copy = {
+			elements: {
+				canvas: privateData.elements.canvas
+			},
+			data: {},
+			state: {}
+		};
+
+		var key;
+
+		for (key in privateData.data) {
+			copy.data[key] = privateData.data[key];
 		}
+
+		for (key in privateData.state) {
+			copy.state[key] = privateData.state[key];
+		}
+
 		return copy;
 	}
 
@@ -247,64 +265,72 @@ function wlcCanvasAnimationController(canvas, a, b) {
 	}
 
 	function stopAnimation(shouldClearCanvas) {
-		state.animationIsStopped = true;
-		state.animationIsPaused = false;
+		var privateState = privateData.state;
+		privateState.animationIsStopped = true;
+		privateState.animationIsPaused = false;
 
 		if (shouldClearCanvas) this.clearCanvas();
 
 		return this; // for chaining invocations
 	}
 
-	function startAnimation(shouldClearCanvas) {
-		if (!state.animationIsPaused && !state.animationIsStopped) {
+	function startAnimation(shouldClearCanvasBeforeDrawing) {
+		var privateState = privateData.state;
+		if (!privateState.animationIsPaused && !privateState.animationIsStopped) {
 			return this;
 		}
 
-		state.animationIsPaused = false;
-		state.animationIsStopped = false;
+		privateState.animationIsPaused = false;
+		privateState.animationIsStopped = false;
 
-		var data = privateData.data;
-		data.animationStartWallTime = new Date().getTime() - state.timeOffset;
-		data.drawnFramesCount = 0;
+		privateState.animationStartWallTime = new Date().getTime() - state.timeOffset;
+		privateState.drawnFramesCount = 0;
 
-		boundMethods.drawNextFrame(shouldClearCanvas);
+		boundMethods.drawNextFrame(shouldClearCanvasBeforeDrawing);
 
 		return this; // for chaining invocations
 	}
 
 	function pauseAnimation() {
-		if (state.animationIsStopped) return;
+		var privateState = privateData.state;
+		if (privateState.animationIsStopped) return;
 
-		state.animationIsPaused = true;
+		privateState.animationIsPaused = true;
 
 		return this; // for chaining invocations
 	}
 
 	function resumeAnimation() {
-		if (state.animationIsStopped || !state.animationIsPaused) return;
+		var privateState = privateData.state;
+		if (privateState.animationIsStopped || !privateState.animationIsPaused) return;
 
-		state.animationIsPaused = false;
+		privateState.animationIsPaused = false;
 		boundMethods.drawNextFrame();
 
 		return this; // for chaining invocations
 	}
 
 	function drawOneFrame() {
-		var localTimeInSeconds = (new Date().getTime() - privateData.data.animationStartWallTime) / 1000;
-		this.drawOneFrameOnTime(localTimeInSeconds);
-
-		return this; // for chaining invocations
+		var localTimeInSeconds = (new Date().getTime() - privateData.state.animationStartWallTime) / 1000;
+		return _drawOneFrameOnTime.call(this, localTimeInSeconds);
 	}
 
-	function drawOneFrameOnTime(timeInSeconds) {
-		_drawOrClearBg.call(this, timeInSeconds);
-		this.drawFrame(privateData.elements.canvas, privateData.data.canvasContext, timeInSeconds);
-
-		return this; // for chaining invocations
+	function drawOneFrameOnTimeViaMethod(localTimeInSeconds) {
+		return _drawOneFrameOnTime.call(this, localTimeInSeconds).pauseAnimation();		
 	}
 
-	function _drawNextFrame(shouldClearCanvas) {
-		if (state.animationIsPaused || state.animationIsStopped) return;
+	function _drawOneFrameOnTime(localTimeInSeconds) {
+		return _drawOrClearBg.call(this, localTimeInSeconds)
+			.drawFrame(
+				privateData.elements.canvas,
+				privateData.data.canvasContext,
+				localTimeInSeconds
+			);
+	}
+
+	function _drawNextFrame(shouldClearCanvasBeforeDrawing) {
+		var privateState = privateData.state;
+		if (privateState.animationIsPaused || privateState.animationIsStopped) return;
 
 		if (typeof this.drawFrame !== 'function') {
 			console.info('The drawFrame "method" is not provided yet. Animation will not start.');
@@ -312,13 +338,12 @@ function wlcCanvasAnimationController(canvas, a, b) {
 			return;
 		}
 
-		// I'd like to clear *BEFORE* checking drawnFramesCount
-		if (shouldClearCanvas) this.clearCanvas();
+		// I'd like to clear canvas also *BEFORE* checking the "drawnFramesCount".
+		if (shouldClearCanvasBeforeDrawing) this.clearCanvas();
 
-		var data = privateData.data;
 
-		data.drawnFramesCount++;
-		if (data.drawnFramesCount > state.drawingFramesCountLimitation) {
+		privateState.drawnFramesCount++;
+		if (privateState.drawnFramesCount > state.drawingFramesCountLimitation) {
 			console.log('Animation frame limitation met. Animation will stop now.');
 			this.stopAnimation();
 			return;
@@ -331,8 +356,7 @@ function wlcCanvasAnimationController(canvas, a, b) {
 
 	function _drawOrClearBg() {
 		var canvas = privateData.elements.canvas;
-		var data = privateData.data;
-		var ctx = data.canvasContext;
+		var ctx = privateData.data.canvasContext;
 
 		if (state.bgColor === null || state.bgColor === '' || state.bgColor === false) {
 			this.clearCanvas();
@@ -340,6 +364,8 @@ function wlcCanvasAnimationController(canvas, a, b) {
 			ctx.fillStyle = state.bgColor;
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
 		}
+
+		return this;
 	}
 }
 
