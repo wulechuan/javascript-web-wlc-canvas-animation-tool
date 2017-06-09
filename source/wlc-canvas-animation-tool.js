@@ -363,7 +363,7 @@
 						drawingFramesCountLimitation = NaN;
 					} else {
 						limitation = parseInt(limitation);
-						if (!isNaN(limitation)) {
+						if (!isNaN(limitation) && limitation>=0) {
 							drawingFramesCountLimitation = limitation;
 						}
 					}
