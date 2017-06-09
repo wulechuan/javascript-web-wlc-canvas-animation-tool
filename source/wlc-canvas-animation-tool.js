@@ -10,7 +10,16 @@
 	var pN_isJQueryWrappedObjectOrAlike = 'isJQueryWrappedObjectOrAlike';
 	var pN_isJQueryWrappedObject = 'isJQueryWrappedObject';
 	var pN_isValidColor = 'isValidColor';
+
+	var pN_animationShouldStop = 'animationShouldStop';
+	var pN_animationIsStopped = 'animationIsStopped';
+	var pN_animationShouldPause = 'animationShouldPause';
+	var pN_animationIsPaused = 'animationIsPaused';
+
 	var pN_drawingFramesCountLimitation = 'drawingFramesCountLimitation';
+	var pN_timeOffsetInSeconds = 'timeOffsetInSeconds';
+
+	var pN_bgColor = 'bgColor';
 
 
 	/**
@@ -94,6 +103,7 @@
 
 		var animationShouldStop = false;
 		var animationIsStopped = true;
+		var animationShouldPause = false;
 		var animationIsPaused = false;
 
 		var animationStartWallTime = NaN;
@@ -158,33 +168,41 @@
 
 		var requestAnimationFrame = window.requestAnimationFrame;
 
-		_init.call(thisInstance, a, b);
 
-		thisInstance.state = _definePublicState.call(thisInstance);
+		// Being public means being writable.
+		var publicState = _definePublicState.call(thisInstance);
+		thisInstance.state = publicState;
+
+
+		// Define "this"-bound methods for conveniences and better source code minification.
+		var b_drawNextFrame = _drawNextFrame.bind(thisInstance);
+		var b_stopAnimation = stopAnimation.bind(thisInstance);
+		var b_startAnimation = startAnimation.bind(thisInstance);
+		var b_pauseAnimation = pauseAnimation.bind(thisInstance);
+		var b_resumeAnimation = resumeAnimation.bind(thisInstance);
+		var b_clearCanvas = clearCanvas.bind(thisInstance);
+		var b_drawOneFrame = drawOneFrame.bind(thisInstance);
+
 
 		thisInstance.config = config.bind(thisInstance);
 		thisInstance.getData = getData.bind(thisInstance);
 		thisInstance.getCanvas = getCanvas.bind(thisInstance);
 		thisInstance.getCanvasContext = getCanvasContext.bind(thisInstance);
 		thisInstance.getCanvasContextType = getCanvasContextType.bind(thisInstance);
-		thisInstance.clearCanvas = clearCanvas.bind(thisInstance);
 
-		thisInstance.stopAnimation = stopAnimation.bind(thisInstance);
-		thisInstance.startAnimation = startAnimation.bind(thisInstance);
-		thisInstance.pauseAnimation = pauseAnimation.bind(thisInstance);
-		thisInstance.resumeAnimation = resumeAnimation.bind(thisInstance);
+		thisInstance.clearCanvas = b_clearCanvas;
+		thisInstance.stopAnimation = b_stopAnimation;
+		thisInstance.startAnimation = b_startAnimation;
+		thisInstance.pauseAnimation = b_pauseAnimation;
+		thisInstance.resumeAnimation = b_resumeAnimation;
 
-		thisInstance.drawOneFrame = drawOneFrame.bind(thisInstance);
-		thisInstance.drawOneFrameOnTime = drawOneFrameOnTimeViaMethod.bind(thisInstance);
-
-		var boundMethods = {
-			drawNextFrame: _drawNextFrame.bind(thisInstance)
-		};
+		thisInstance.drawOneFrame = b_drawOneFrame;
+		thisInstance.drawOneFrameOnTime = drawOneFrameOnTimeViaMethod.bind(thisInstance);;
 
 
-		if (!animationShouldStop) {
-			thisInstance.startAnimation();
-		}
+
+		_init.call(thisInstance, a, b);
+
 
 
 
@@ -218,90 +236,17 @@
 			canvasContext = canvas.getContext(canvasContextType);
 
 			config.call(thisInstance, initOptions);
-		}
-
-		function config(options) {
-			options = options || {};
-			var _inputTemp;
 
 
-
-			_inputTemp = options.bgColor;
-			if (wlcCanvasAnimationController[pN_isValidColor](_inputTemp)) {
-				bgColor = _inputTemp;
+			if (!animationShouldStop) {
+				// if animationShouldPause,
+				// then we still need to first start the animation.
+				// Because to pause a stopped animation doesn't make any sence.
+				return b_startAnimation();
 			}
-
-
-
-			_inputTemp = parseFloat(options.timeOffsetInSeconds);
-			if (!isNaN(_inputTemp)) {
-				timeOffsetInSeconds = _inputTemp;
-			}
-
-
-
-			_inputTemp = options[pN_drawingFramesCountLimitation];
-			if (isNaN(_inputTemp)) {
-				drawingFramesCountLimitation = NaN;
-			} else {
-				_inputTemp = parseInt(options[pN_drawingFramesCountLimitation]);
-				if (!isNaN(_inputTemp)) {
-					drawingFramesCountLimitation = _inputTemp;
-				}
-			}
-
-
-			_inputTemp = options.drawFrame;
-			if (typeof _inputTemp === 'function') {
-				thisInstance.drawFrame = options.drawFrame;
-			}
-
-			return thisInstance; // for chaining method invocations
 		}
 
 
-		/**
-		 * Define some properties using getters and setters,
-		 * So that they can be accessed directly in public.
-		 * @return {object}
-		 */
-		function _definePublicState() {
-			var publicState = {};
-
-			Object.defineProperty(publicState, 'animationIsStopped', {
-				enumerable: true,
-				get: function () {
-					return animationIsStopped;
-				},
-				set: function (isToStopAnimation) {
-					if (isToStopAnimation) {
-						stopAnimation.call(thisInstance);
-					} else {
-						startAnimation.call(thisInstance);
-					}
-
-					return animationIsStopped;
-				}
-			});
-
-			Object.defineProperty(publicState, 'animationIsPaused', {
-				enumerable: true,
-				get: function () {
-					return animationIsPaused;
-				},
-				set: function (isToPauseAnimation) {
-					if (isToPauseAnimation) {
-						pauseAnimation.call(thisInstance);
-					} else {
-						resumeAnimation.call(thisInstance);
-					}
-
-					return animationIsPaused;
-				}
-			});
-
-			return publicState;
-		}
 
 		/**
 		 * Get a copy of all private data just for inspection
@@ -317,7 +262,9 @@
 					canvasContextType: canvasContextType
 				},
 				state: {
+					animationShouldStop: animationShouldStop,
 					animationIsStopped: animationIsStopped,
+					animationShouldPause: animationShouldPause,
 					animationIsPaused: animationIsPaused,
 					animationStartWallTime: animationStartWallTime,
 					timeOffsetInSeconds: timeOffsetInSeconds,
@@ -327,6 +274,133 @@
 					drawingFramesCountLimitation: drawingFramesCountLimitation
 				}
 			};
+		}
+
+		/**
+		 * Define some properties using getters and setters,
+		 * So that they can be accessed directly in public.
+		 * @return {object}
+		 */
+		function _definePublicState() {
+			var publicState = {};
+
+			Object.defineProperty(publicState, pN_animationShouldStop, {
+				enumerable: true,
+				get: function () {
+					return animationShouldStop;
+				},
+				set: function (isToStopAnimation) {
+					if (isToStopAnimation) {
+						stopAnimation.call(thisInstance);
+					} else {
+						startAnimation.call(thisInstance);
+					}
+
+					return animationShouldStop;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_animationShouldPause, {
+				enumerable: true,
+				get: function () {
+					return animationShouldPause;
+				},
+				set: function (isToPauseAnimation) {
+					if (isToPauseAnimation) {
+						pauseAnimation.call(thisInstance);
+					} else {
+						resumeAnimation.call(thisInstance);
+					}
+
+					return animationShouldPause;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_drawingFramesCountLimitation, {
+				enumerable: true,
+				get: function () {
+					return drawingFramesCountLimitation;
+				},
+				set: function (limitation) {
+					if (isNaN(limitation)) {
+						drawingFramesCountLimitation = NaN;
+					} else {
+						limitation = parseInt(limitation);
+						if (!isNaN(limitation)) {
+							drawingFramesCountLimitation = limitation;
+						}
+					}
+
+					return drawingFramesCountLimitation;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_timeOffsetInSeconds, {
+				enumerable: true,
+				get: function () {
+					return timeOffsetInSeconds;
+				},
+				set: function (offset) {
+					offset = parseFloat(offset);
+					if (!isNaN(offset)) {
+						timeOffsetInSeconds = offset;
+					}
+
+					return timeOffsetInSeconds;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_bgColor, {
+				enumerable: true,
+				get: function () {
+					return bgColor;
+				},
+				set: function (newColor) {
+					if (wlcCanvasAnimationController[pN_isValidColor](newColor)) {
+						bgColor = newColor.trim().toLowerCase();
+					}
+
+					return bgColor;
+				}
+			});
+
+			return publicState;
+		}
+
+		function config(options) {
+			options = options || {};
+			var _inputTemp;
+
+
+			// Just use defined setters to update public values,
+			// so that we don't need to write type/value validation codes again here.
+			if (options.hasOwnProperty(pN_animationShouldStop)) {
+				publicState[pN_animationShouldStop] = options[pN_animationShouldStop];
+			}
+
+			if (options.hasOwnProperty(pN_animationShouldPause)) {
+				publicState[pN_animationShouldPause] = options[pN_animationShouldPause];
+			}
+
+			if (options.hasOwnProperty(pN_drawingFramesCountLimitation)) {
+				publicState[pN_drawingFramesCountLimitation] = options[pN_drawingFramesCountLimitation];
+			}
+
+			if (options.hasOwnProperty(pN_timeOffsetInSeconds)) {
+				publicState[pN_timeOffsetInSeconds] = options[pN_timeOffsetInSeconds];
+			}
+
+			if (options.hasOwnProperty(pN_bgColor)) {
+				publicState[pN_bgColor] = options[pN_bgColor];
+			}
+
+
+			_inputTemp = options.drawFrame;
+			if (typeof _inputTemp === 'function') {
+				thisInstance.drawFrame = options.drawFrame;
+			}
+
+			return thisInstance; // for chaining method invocations
 		}
 
 		function getCanvas() {
@@ -342,9 +416,10 @@
 		}
 
 		function clearCanvas() {
-			_clearCanvas.call(thisInstance);
-			return stopAnimation.call(thisInstance); // for chaining method invocations
+			b_clearCanvas();
+			return b_stopAnimation(); // for chaining method invocations
 		}
+
 		function _clearCanvas() {
 			canvasContext.clearRect(0, 0, canvas.width, canvas.height);
 			return thisInstance; // for chaining method invocations
@@ -354,37 +429,41 @@
 			animationIsStopped = true;
 			animationIsPaused = false;
 
-			if (shouldClearCanvas) _clearCanvas.call(thisInstance);
+			animationShouldPause = false;
+			animationShouldStop = false;
+
+			if (shouldClearCanvas) b_clearCanvas();
 
 			return thisInstance; // for chaining method invocations
 		}
 
-		function startAnimation(timeOffsetInSeconds) {
+		function startAnimation(newTimeOffset) {
 			if (!animationIsPaused && !animationIsStopped) {
 				return thisInstance;
 			}
 
-			animationIsPaused = false;
-			animationIsStopped = false;
-
-			if (timeOffsetInSeconds) {
-				config.call(thisInstance, {
-					timeOffsetInSeconds: timeOffsetInSeconds
-				});
-			}
-
 			drawnFramesCount = 0;
 			localPlayingDurationInSeconds = 0;
+
+			// Set twice, if the second value (which is the argument) is invalid and not taken
+			// Then the first value (which is zero) takes effects.
+			publicState[pN_timeOffsetInSeconds] = 0;
+			publicState[pN_timeOffsetInSeconds] = newTimeOffset;
+
 			animationStartWallTime = new Date().getTime() - timeOffsetInSeconds;
 
-			_drawNextFrame.call(thisInstance);
+			b_drawNextFrame();
+
+			// animationShouldStop = false;
+			// animationShouldPause = false;
 
 			return thisInstance; // for chaining method invocations
 		}
 
 		function pauseAnimation() {
-			if (animationIsStopped) return;
+			if (animationIsStopped || animationIsPaused) return;
 			animationIsPaused = true;
+			animationShouldPause = false;
 			return thisInstance; // for chaining method invocations
 		}
 
@@ -392,7 +471,7 @@
 			if (animationIsStopped || !animationIsPaused) return;
 
 			animationIsPaused = false;
-			_drawNextFrame.call(thisInstance);
+			b_drawNextFrame();
 
 			return thisInstance; // for chaining method invocations
 		}
@@ -405,28 +484,41 @@
 				return;
 			}
 
+			if (animationShouldStop) {
+				b_stopAnimation();
+			}
+
 			if (typeof thisInstance.drawFrame !== 'function') {
 				console.info(
 					'The "drawFrame" method is not provided yet.',
 					'Animation will not start.'
 				);
-				stopAnimation.call(thisInstance);
+				b_stopAnimation();
 				return;
 			}
 
 			drawnFramesCount++;
 			if (drawnFramesCount > drawingFramesCountLimitation) {
 				console.log('Animation frame limitation met. Animation will stop now.');
-				stopAnimation.call(thisInstance);
+				b_stopAnimation();
 				return;
 			}
+
+
 
 			localPlayingDurationInSeconds = (new Date() - animationStartWallTime) / 1000;
 			localTimeInSeconds = localPlayingDurationInSeconds + timeOffsetInSeconds;
 
-			drawOneFrame.call(thisInstance);
 
-			requestAnimationFrame(boundMethods.drawNextFrame);
+
+
+			if (animationShouldPause) {
+				b_pauseAnimation();
+			}
+
+			b_drawOneFrame();
+
+			requestAnimationFrame(b_drawNextFrame);
 		}
 
 		function drawOneFrame() {
