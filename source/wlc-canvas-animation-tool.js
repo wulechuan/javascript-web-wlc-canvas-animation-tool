@@ -23,9 +23,9 @@
 
 	var pN_timeOffsetInSeconds = 'timeOffsetInSeconds';
 
-	var pN_shouldPauseWhenAnyLimiationMed = 'shouldPauseWhenAnyLimiationMed';
+	var pN_shouldPauseButNotStopWhenAnyLimiationMed = 'shouldPauseButNotStopWhenAnyLimiationMed';
 	var pN_localTimeAfterWhichToStopOrPauseAnimation = 'localTimeAfterWhichToStopOrPauseAnimation'; // in seconds
-	var pN_localDurationAfterWhichToStopOrPauseAnimation = 'localDurationAfterWhichToStopOrPauseAnimation'; // in seconds
+	var pN_localDurationBeyondWhichToStopOrPauseAnimation = 'localDurationBeyondWhichToStopOrPauseAnimation'; // in seconds
 	var pN_wallTimeAfterWhichToStopOrPauseAnimation = 'wallTimeAfterWhichToStopOrPauseAnimation'; // in milliseconds
 	var pN_drawingFramesCountLimitation = 'drawingFramesCountLimitation';
 
@@ -119,9 +119,9 @@
 
 		var timeOffsetInSeconds = 0;
 
-		var shouldPauseWhenAnyLimiationMed = false; // "true" means should stop instead of pause.
+		var shouldPauseButNotStopWhenAnyLimiationMed = false; // "true" means should stop instead of pause.
+		var localDurationBeyondWhichToStopOrPauseAnimation = NaN;
 		var localTimeAfterWhichToStopOrPauseAnimation = NaN;
-		var localDurationAfterWhichToStopOrPauseAnimation = NaN;
 		var wallTimeAfterWhichToStopOrPauseAnimation = NaN;
 		var drawingFramesCountLimitation = NaN; // In case we need to draw like 1000 frames and then stop there for ever
 
@@ -290,9 +290,9 @@
 
 					timeOffsetInSeconds: timeOffsetInSeconds,
 
-					shouldPauseWhenAnyLimiationMed: shouldPauseWhenAnyLimiationMed,
+					shouldPauseButNotStopWhenAnyLimiationMed: shouldPauseButNotStopWhenAnyLimiationMed,
 					localTimeAfterWhichToStopOrPauseAnimation: localTimeAfterWhichToStopOrPauseAnimation,
-					localDurationAfterWhichToStopOrPauseAnimation: localDurationAfterWhichToStopOrPauseAnimation,
+					localDurationBeyondWhichToStopOrPauseAnimation: localDurationBeyondWhichToStopOrPauseAnimation,
 					wallTimeAfterWhichToStopOrPauseAnimation: wallTimeAfterWhichToStopOrPauseAnimation,
 					drawingFramesCountLimitation: drawingFramesCountLimitation,
 
@@ -407,29 +407,29 @@
 				}
 			});
 
-			Object.defineProperty(publicState, pN_shouldPauseWhenAnyLimiationMed, {
+			Object.defineProperty(publicState, pN_shouldPauseButNotStopWhenAnyLimiationMed, {
 				enumerable: true,
 				get: function () {
-					return shouldPauseWhenAnyLimiationMed;
+					return shouldPauseButNotStopWhenAnyLimiationMed;
 				},
 				set: function (shouldPauseInsteadOfStop) {
-					shouldPauseWhenAnyLimiationMed = !!shouldPauseInsteadOfStop;
-					return shouldPauseWhenAnyLimiationMed;
+					shouldPauseButNotStopWhenAnyLimiationMed = !!shouldPauseInsteadOfStop;
+					return shouldPauseButNotStopWhenAnyLimiationMed;
 				}
 			});
 
-			Object.defineProperty(publicState, pN_localDurationAfterWhichToStopOrPauseAnimation, {
+			Object.defineProperty(publicState, pN_localDurationBeyondWhichToStopOrPauseAnimation, {
 				enumerable: true,
 				get: function () {
-					return localDurationAfterWhichToStopOrPauseAnimation;
+					return localDurationBeyondWhichToStopOrPauseAnimation;
 				},
 				set: function (durationLimitation) {
 					durationLimitation = parseFloat(durationLimitation);
 					if (!isNaN(durationLimitation) && durationLimitation>=0) {
-						localDurationAfterWhichToStopOrPauseAnimation = durationLimitation;
+						localDurationBeyondWhichToStopOrPauseAnimation = durationLimitation;
 					}
 
-					return localDurationAfterWhichToStopOrPauseAnimation;
+					return localDurationBeyondWhichToStopOrPauseAnimation;
 				}
 			});
 
@@ -525,9 +525,9 @@
 					options[pN_timeOffsetInSeconds];
 			}
 
-			if (options.hasOwnProperty(pN_shouldPauseWhenAnyLimiationMed)) {
-				publicState[pN_shouldPauseWhenAnyLimiationMed] =
-					options[pN_shouldPauseWhenAnyLimiationMed];
+			if (options.hasOwnProperty(pN_shouldPauseButNotStopWhenAnyLimiationMed)) {
+				publicState[pN_shouldPauseButNotStopWhenAnyLimiationMed] =
+					options[pN_shouldPauseButNotStopWhenAnyLimiationMed];
 			}
 
 			if (options.hasOwnProperty(pN_localTimeAfterWhichToStopOrPauseAnimation)) {
@@ -535,9 +535,9 @@
 					options[pN_localTimeAfterWhichToStopOrPauseAnimation];
 			}
 
-			if (options.hasOwnProperty(pN_localDurationAfterWhichToStopOrPauseAnimation)) {
-				publicState[pN_localDurationAfterWhichToStopOrPauseAnimation] =
-					options[pN_localDurationAfterWhichToStopOrPauseAnimation];
+			if (options.hasOwnProperty(pN_localDurationBeyondWhichToStopOrPauseAnimation)) {
+				publicState[pN_localDurationBeyondWhichToStopOrPauseAnimation] =
+					options[pN_localDurationBeyondWhichToStopOrPauseAnimation];
 			}
 
 			if (options.hasOwnProperty(pN_wallTimeAfterWhichToStopOrPauseAnimation)) {
@@ -583,6 +583,11 @@
 			animationShouldPause = false;
 			animationShouldStop = false;
 
+			localDurationBeyondWhichToStopOrPauseAnimation = NaN;
+			localTimeAfterWhichToStopOrPauseAnimation = NaN;
+			wallTimeAfterWhichToStopOrPauseAnimation = NaN;
+			drawingFramesCountLimitation = NaN;
+
 			if (shouldClearCanvas) b_clearCanvas();
 
 			return thisInstance; // for chaining method invocations
@@ -618,6 +623,12 @@
 			if (animationIsStopped || animationIsPaused) return;
 			animationIsPaused = true;
 			animationShouldPause = false;
+
+			drawingFramesCountLimitation = NaN;
+			localDurationBeyondWhichToStopOrPauseAnimation = NaN;
+			localTimeAfterWhichToStopOrPauseAnimation = NaN;
+			wallTimeAfterWhichToStopOrPauseAnimation = NaN;
+
 			return thisInstance; // for chaining method invocations
 		}
 
@@ -673,7 +684,7 @@
 
 
 			localPlayingDurationInSeconds = (now - animationStartWallTime) / 1000;
-			if (localPlayingDurationInSeconds >= localDurationAfterWhichToStopOrPauseAnimation) {
+			if (localPlayingDurationInSeconds >= localDurationBeyondWhichToStopOrPauseAnimation) {
 				atLeastOnLimiationMet = true;
 				console.log(commonString1, 'running duration', commonString2);
 			}
@@ -688,10 +699,10 @@
 			if (atLeastOnLimiationMet) {
 				console.log(
 					'Animation will',
-					shouldPauseWhenAnyLimiationMed ? 'pause' : 'stop',
+					shouldPauseButNotStopWhenAnyLimiationMed ? 'pause' : 'stop',
 					'now.'
 				);
-				if (shouldPauseWhenAnyLimiationMed) {
+				if (shouldPauseButNotStopWhenAnyLimiationMed) {
 					return b_pauseAnimation();
 				} else {
 					return b_stopAnimation();
