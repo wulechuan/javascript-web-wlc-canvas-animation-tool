@@ -1,7 +1,7 @@
 function setupRippleAnimation(animationController) {
 	var canvas = document.getElementById('my-canvas-1');
 	
-	var bgColor = ''; // 'rgb(219, 240, 255)';
+	var bgColor = 'rgb(219, 240, 255)';
 	var waveColorRGB = [63, 159, 255];
 
 

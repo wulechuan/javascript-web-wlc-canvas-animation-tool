@@ -24,10 +24,11 @@
 	var pN_timeOffsetInSeconds = 'timeOffsetInSeconds';
 
 	var pN_shouldPauseButNotStopWhenAnyLimiationMed = 'shouldPauseButNotStopWhenAnyLimiationMed';
-	var pN_localTimeAfterWhichToStopOrPauseAnimation = 'localTimeAfterWhichToStopOrPauseAnimation'; // in seconds
 	var pN_localDurationBeyondWhichToStopOrPauseAnimation = 'localDurationBeyondWhichToStopOrPauseAnimation'; // in seconds
+	var pN_localTimeAfterWhichToStopOrPauseAnimation = 'localTimeAfterWhichToStopOrPauseAnimation'; // in seconds
 	var pN_wallTimeAfterWhichToStopOrPauseAnimation = 'wallTimeAfterWhichToStopOrPauseAnimation'; // in milliseconds
 	var pN_drawingFramesCountLimitation = 'drawingFramesCountLimitation';
+
 
 
 
@@ -127,6 +128,7 @@
 
 
 		// internal derived values
+		var limiationThatCausePauseOrStop = '';
 		var animationStartWallTime = NaN;
 		var localPlayingDurationInSeconds = 0;
 		var localTimeInSeconds = 0;
@@ -295,6 +297,8 @@
 					localDurationBeyondWhichToStopOrPauseAnimation: localDurationBeyondWhichToStopOrPauseAnimation,
 					wallTimeAfterWhichToStopOrPauseAnimation: wallTimeAfterWhichToStopOrPauseAnimation,
 					drawingFramesCountLimitation: drawingFramesCountLimitation,
+
+					limiationThatCausePauseOrStop: limiationThatCausePauseOrStop,
 
 					// internal derived values
 					animationStartWallTime: animationStartWallTime,
@@ -577,16 +581,15 @@
 		}
 
 		function stopAnimation(shouldClearCanvas) {
+			// I comment out this line below to ensure
+			// that everything gets reset in stopAnimation method.
+			// if (animationIsStopped) return;
+
 			animationIsStopped = true;
 			animationIsPaused = false;
 
 			animationShouldPause = false;
 			animationShouldStop = false;
-
-			localDurationBeyondWhichToStopOrPauseAnimation = NaN;
-			localTimeAfterWhichToStopOrPauseAnimation = NaN;
-			wallTimeAfterWhichToStopOrPauseAnimation = NaN;
-			drawingFramesCountLimitation = NaN;
 
 			if (shouldClearCanvas) b_clearCanvas();
 
@@ -621,13 +624,9 @@
 
 		function pauseAnimation() {
 			if (animationIsStopped || animationIsPaused) return;
+
 			animationIsPaused = true;
 			animationShouldPause = false;
-
-			drawingFramesCountLimitation = NaN;
-			localDurationBeyondWhichToStopOrPauseAnimation = NaN;
-			localTimeAfterWhichToStopOrPauseAnimation = NaN;
-			wallTimeAfterWhichToStopOrPauseAnimation = NaN;
 
 			return thisInstance; // for chaining method invocations
 		}
@@ -672,6 +671,7 @@
 			drawnFramesCount++;
 			if (drawnFramesCount > drawingFramesCountLimitation) {
 				atLeastOnLimiationMet = true;
+				drawingFramesCountLimitation = NaN;
 				console.log(commonString1, 'frame', commonString2);
 			}
 
@@ -679,6 +679,7 @@
 			var now = new Date();
 			if (now >= wallTimeAfterWhichToStopOrPauseAnimation) {
 				atLeastOnLimiationMet = true;
+				wallTimeAfterWhichToStopOrPauseAnimation = NaN;
 				console.log(commonString1, 'time', commonString2);
 			}
 
@@ -686,6 +687,7 @@
 			localPlayingDurationInSeconds = (now - animationStartWallTime) / 1000;
 			if (localPlayingDurationInSeconds >= localDurationBeyondWhichToStopOrPauseAnimation) {
 				atLeastOnLimiationMet = true;
+				localDurationBeyondWhichToStopOrPauseAnimation = NaN;
 				console.log(commonString1, 'running duration', commonString2);
 			}
 
@@ -693,6 +695,7 @@
 			localTimeInSeconds = localPlayingDurationInSeconds + timeOffsetInSeconds;
 			if (localTimeInSeconds >= localTimeAfterWhichToStopOrPauseAnimation) {
 				atLeastOnLimiationMet = true;
+				localTimeAfterWhichToStopOrPauseAnimation = NaN;
 				console.log(commonString1, 'local time', commonString2);
 			}
 
