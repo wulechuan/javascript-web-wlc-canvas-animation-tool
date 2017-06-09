@@ -11,17 +11,24 @@
 	var pN_isJQueryWrappedObject = 'isJQueryWrappedObject';
 	var pN_isValidColor = 'isValidColor';
 
+	var pN_drawFrame = 'drawFrame';
+
 	var pN_shouldClearCanvasBeforeDrawing = 'shouldClearCanvasBeforeDrawing';
+	var pN_bgColor = 'bgColor';
 
 	var pN_animationShouldStop = 'animationShouldStop';
 	var pN_animationIsStopped = 'animationIsStopped';
 	var pN_animationShouldPause = 'animationShouldPause';
 	var pN_animationIsPaused = 'animationIsPaused';
 
-	var pN_drawingFramesCountLimitation = 'drawingFramesCountLimitation';
 	var pN_timeOffsetInSeconds = 'timeOffsetInSeconds';
 
-	var pN_bgColor = 'bgColor';
+	var pN_shouldPauseWhenAnyLimiationMed = 'shouldPauseWhenAnyLimiationMed';
+	var pN_localTimeAfterWhichToStopOrPauseAnimation = 'localTimeAfterWhichToStopOrPauseAnimation'; // in seconds
+	var pN_localDurationAfterWhichToStopOrPauseAnimation = 'localDurationAfterWhichToStopOrPauseAnimation'; // in seconds
+	var pN_wallTimeAfterWhichToStopOrPauseAnimation = 'wallTimeAfterWhichToStopOrPauseAnimation'; // in milliseconds
+	var pN_drawingFramesCountLimitation = 'drawingFramesCountLimitation';
+
 
 
 	/**
@@ -110,13 +117,20 @@
 		var animationShouldPause = false;
 		var animationIsPaused = false;
 
-		var animationStartWallTime = NaN;
 		var timeOffsetInSeconds = 0;
+
+		var shouldPauseWhenAnyLimiationMed = false; // "true" means should stop instead of pause.
+		var localTimeAfterWhichToStopOrPauseAnimation = NaN;
+		var localDurationAfterWhichToStopOrPauseAnimation = NaN;
+		var wallTimeAfterWhichToStopOrPauseAnimation = NaN;
+		var drawingFramesCountLimitation = NaN; // In case we need to draw like 1000 frames and then stop there for ever
+
+
+		// internal derived values
+		var animationStartWallTime = NaN;
 		var localPlayingDurationInSeconds = 0;
 		var localTimeInSeconds = 0;
-
 		var drawnFramesCount = 0;
-		var drawingFramesCountLimitation = NaN; // In case we need to draw like 1000 frames and then stop there for ever
 
 
 
@@ -221,7 +235,7 @@
 				initOptions = a;
 
 				if (typeof b === 'function') {
-					thisInstance.drawFrame = b;
+					thisInstance[pN_drawFrame] = b;
 				} else if (typeof b === 'string' && b.match(regExpCanvasContextType)) {
 					canvasContextType = b.trim().toLowerCase();
 				}
@@ -231,7 +245,7 @@
 				initOptions = b;
 
 				if (typeof a === 'function') {
-					thisInstance.drawFrame = a;
+					thisInstance[pN_drawFrame] = a;
 				} else if (typeof a === 'string' && a.match(regExpCanvasContextType)) {
 					canvasContextType = a.trim().toLowerCase();
 				}
@@ -266,16 +280,27 @@
 					canvasContextType: canvasContextType
 				},
 				state: {
+					shouldClearCanvasBeforeDrawing: shouldClearCanvasBeforeDrawing,
+					bgColor: bgColor,
+
 					animationShouldStop: animationShouldStop,
 					animationIsStopped: animationIsStopped,
 					animationShouldPause: animationShouldPause,
 					animationIsPaused: animationIsPaused,
-					animationStartWallTime: animationStartWallTime,
+
 					timeOffsetInSeconds: timeOffsetInSeconds,
+
+					shouldPauseWhenAnyLimiationMed: shouldPauseWhenAnyLimiationMed,
+					localTimeAfterWhichToStopOrPauseAnimation: localTimeAfterWhichToStopOrPauseAnimation,
+					localDurationAfterWhichToStopOrPauseAnimation: localDurationAfterWhichToStopOrPauseAnimation,
+					wallTimeAfterWhichToStopOrPauseAnimation: wallTimeAfterWhichToStopOrPauseAnimation,
+					drawingFramesCountLimitation: drawingFramesCountLimitation,
+
+					// internal derived values
+					animationStartWallTime: animationStartWallTime,
 					localPlayingDurationInSeconds: localPlayingDurationInSeconds,
 					localTimeInSeconds: localTimeInSeconds,
-					drawnFramesCount: drawnFramesCount,
-					drawingFramesCountLimitation: drawingFramesCountLimitation
+					drawnFramesCount: drawnFramesCount
 				}
 			};
 		}
@@ -288,25 +313,28 @@
 		function _definePublicState() {
 			var publicState = {};
 
-			Object.defineProperty(publicState, pN_animationIsStopped, {
+			Object.defineProperty(publicState, pN_shouldClearCanvasBeforeDrawing, {
 				enumerable: true,
 				get: function () {
-					return animationIsStopped;
+					return shouldClearCanvasBeforeDrawing;
 				},
-				set: function () {
-					console.warn('state.'+pN_animationIsStopped+' is a read-only property.');
-					return animationIsStopped;
+				set: function (shouldClear) {
+					shouldClearCanvasBeforeDrawing = !!shouldClear;
+					return shouldClearCanvasBeforeDrawing;
 				}
 			});
 
-			Object.defineProperty(publicState, pN_animationIsPaused, {
+			Object.defineProperty(publicState, pN_bgColor, {
 				enumerable: true,
 				get: function () {
-					return animationIsPaused;
+					return bgColor;
 				},
-				set: function () {
-					console.warn('state.'+pN_animationIsPaused+' is a read-only property.');
-					return animationIsPaused;
+				set: function (newColor) {
+					if (wlcCanvasAnimationController[pN_isValidColor](newColor)) {
+						bgColor = newColor.trim().toLowerCase();
+					}
+
+					return bgColor;
 				}
 			});
 
@@ -326,6 +354,17 @@
 				}
 			});
 
+			Object.defineProperty(publicState, pN_animationIsStopped, {
+				enumerable: true,
+				get: function () {
+					return animationIsStopped;
+				},
+				set: function () {
+					console.warn('state.'+pN_animationIsStopped+' is a read-only property.');
+					return animationIsStopped;
+				}
+			});
+
 			Object.defineProperty(publicState, pN_animationShouldPause, {
 				enumerable: true,
 				get: function () {
@@ -342,14 +381,85 @@
 				}
 			});
 
-			Object.defineProperty(publicState, pN_shouldClearCanvasBeforeDrawing, {
+			Object.defineProperty(publicState, pN_animationIsPaused, {
 				enumerable: true,
 				get: function () {
-					return shouldClearCanvasBeforeDrawing;
+					return animationIsPaused;
 				},
-				set: function (shouldClear) {
-					shouldClearCanvasBeforeDrawing = !!shouldClear;
-					return shouldClearCanvasBeforeDrawing;
+				set: function () {
+					console.warn('state.'+pN_animationIsPaused+' is a read-only property.');
+					return animationIsPaused;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_timeOffsetInSeconds, {
+				enumerable: true,
+				get: function () {
+					return timeOffsetInSeconds;
+				},
+				set: function (offset) {
+					offset = parseFloat(offset);
+					if (!isNaN(offset)) {
+						timeOffsetInSeconds = offset;
+					}
+
+					return timeOffsetInSeconds;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_shouldPauseWhenAnyLimiationMed, {
+				enumerable: true,
+				get: function () {
+					return shouldPauseWhenAnyLimiationMed;
+				},
+				set: function (shouldPauseInsteadOfStop) {
+					shouldPauseWhenAnyLimiationMed = !!shouldPauseInsteadOfStop;
+					return shouldPauseWhenAnyLimiationMed;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_localDurationAfterWhichToStopOrPauseAnimation, {
+				enumerable: true,
+				get: function () {
+					return localDurationAfterWhichToStopOrPauseAnimation;
+				},
+				set: function (durationLimitation) {
+					durationLimitation = parseFloat(durationLimitation);
+					if (!isNaN(durationLimitation) && durationLimitation>=0) {
+						localDurationAfterWhichToStopOrPauseAnimation = durationLimitation;
+					}
+
+					return localDurationAfterWhichToStopOrPauseAnimation;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_localTimeAfterWhichToStopOrPauseAnimation, {
+				enumerable: true,
+				get: function () {
+					return localTimeAfterWhichToStopOrPauseAnimation;
+				},
+				set: function (timePoint) {
+					timePoint = parseFloat(timePoint);
+					if (!isNaN(timePoint)) {
+						localTimeAfterWhichToStopOrPauseAnimation = timePoint;
+					}
+
+					return localTimeAfterWhichToStopOrPauseAnimation;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_wallTimeAfterWhichToStopOrPauseAnimation, {
+				enumerable: true,
+				get: function () {
+					return wallTimeAfterWhichToStopOrPauseAnimation;
+				},
+				set: function (dateTime) {
+					dateTime = parseFloat(dateTime);
+					if (!isNaN(dateTime) && dateTime>=0) {
+						wallTimeAfterWhichToStopOrPauseAnimation = Math.max(new Date(), dateTime);
+					}
+
+					return wallTimeAfterWhichToStopOrPauseAnimation;
 				}
 			});
 
@@ -372,74 +482,74 @@
 				}
 			});
 
-			Object.defineProperty(publicState, pN_timeOffsetInSeconds, {
-				enumerable: true,
-				get: function () {
-					return timeOffsetInSeconds;
-				},
-				set: function (offset) {
-					offset = parseFloat(offset);
-					if (!isNaN(offset)) {
-						timeOffsetInSeconds = offset;
-					}
-
-					return timeOffsetInSeconds;
-				}
-			});
-
-			Object.defineProperty(publicState, pN_bgColor, {
-				enumerable: true,
-				get: function () {
-					return bgColor;
-				},
-				set: function (newColor) {
-					if (wlcCanvasAnimationController[pN_isValidColor](newColor)) {
-						bgColor = newColor.trim().toLowerCase();
-					}
-
-					return bgColor;
-				}
-			});
-
 			return publicState;
 		}
 
 		function config(options) {
 			options = options || {};
-			var _inputTemp;
+
+			if (typeof options === 'function') {
+				thisInstance[pN_drawFrame] = options;
+				return thisInstance;
+			}
+
+			if (typeof options[pN_drawFrame] === 'function') {
+				thisInstance[pN_drawFrame] = options[pN_drawFrame];
+			}
 
 
 			// Just use defined setters to update public values,
 			// so that we don't need to write type/value validation codes again here.
-			if (options.hasOwnProperty(pN_animationShouldStop)) {
-				publicState[pN_animationShouldStop] = options[pN_animationShouldStop];
-			}
-
-			if (options.hasOwnProperty(pN_animationShouldPause)) {
-				publicState[pN_animationShouldPause] = options[pN_animationShouldPause];
-			}
-
 			if (options.hasOwnProperty(pN_shouldClearCanvasBeforeDrawing)) {
-				publicState[pN_shouldClearCanvasBeforeDrawing] = options[pN_shouldClearCanvasBeforeDrawing];
-			}
-
-			if (options.hasOwnProperty(pN_drawingFramesCountLimitation)) {
-				publicState[pN_drawingFramesCountLimitation] = options[pN_drawingFramesCountLimitation];
-			}
-
-			if (options.hasOwnProperty(pN_timeOffsetInSeconds)) {
-				publicState[pN_timeOffsetInSeconds] = options[pN_timeOffsetInSeconds];
+				publicState[pN_shouldClearCanvasBeforeDrawing] =
+					options[pN_shouldClearCanvasBeforeDrawing];
 			}
 
 			if (options.hasOwnProperty(pN_bgColor)) {
-				publicState[pN_bgColor] = options[pN_bgColor];
+				publicState[pN_bgColor] =
+					options[pN_bgColor];
 			}
 
-
-			_inputTemp = options.drawFrame;
-			if (typeof _inputTemp === 'function') {
-				thisInstance.drawFrame = options.drawFrame;
+			if (options.hasOwnProperty(pN_animationShouldStop)) {
+				publicState[pN_animationShouldStop] =
+					options[pN_animationShouldStop];
 			}
+
+			if (options.hasOwnProperty(pN_animationShouldPause)) {
+				publicState[pN_animationShouldPause] =
+					options[pN_animationShouldPause];
+			}
+
+			if (options.hasOwnProperty(pN_timeOffsetInSeconds)) {
+				publicState[pN_timeOffsetInSeconds] =
+					options[pN_timeOffsetInSeconds];
+			}
+
+			if (options.hasOwnProperty(pN_shouldPauseWhenAnyLimiationMed)) {
+				publicState[pN_shouldPauseWhenAnyLimiationMed] =
+					options[pN_shouldPauseWhenAnyLimiationMed];
+			}
+
+			if (options.hasOwnProperty(pN_localTimeAfterWhichToStopOrPauseAnimation)) {
+				publicState[pN_localTimeAfterWhichToStopOrPauseAnimation] =
+					options[pN_localTimeAfterWhichToStopOrPauseAnimation];
+			}
+
+			if (options.hasOwnProperty(pN_localDurationAfterWhichToStopOrPauseAnimation)) {
+				publicState[pN_localDurationAfterWhichToStopOrPauseAnimation] =
+					options[pN_localDurationAfterWhichToStopOrPauseAnimation];
+			}
+
+			if (options.hasOwnProperty(pN_wallTimeAfterWhichToStopOrPauseAnimation)) {
+				publicState[pN_wallTimeAfterWhichToStopOrPauseAnimation] =
+					options[pN_wallTimeAfterWhichToStopOrPauseAnimation];
+			}
+
+			if (options.hasOwnProperty(pN_drawingFramesCountLimitation)) {
+				publicState[pN_drawingFramesCountLimitation] =
+					options[pN_drawingFramesCountLimitation];
+			}
+
 
 			return thisInstance; // for chaining method invocations
 		}
@@ -532,7 +642,7 @@
 				b_stopAnimation();
 			}
 
-			if (typeof thisInstance.drawFrame !== 'function') {
+			if (typeof thisInstance[pN_drawFrame] !== 'function') {
 				console.info(
 					'The "drawFrame" method is not provided yet.',
 					'Animation will not start.'
@@ -541,23 +651,56 @@
 				return;
 			}
 
+
+			var atLeastOnLimiationMet = false;
+
+			// Using common strings for better source code compression.
+			var commonString1 = 'Animation';
+			var commonString2 = 'limitation met.';
+
 			drawnFramesCount++;
 			if (drawnFramesCount > drawingFramesCountLimitation) {
-				console.log('Animation frame limitation met. Animation will stop now.');
-				b_stopAnimation();
-				return;
+				atLeastOnLimiationMet = true;
+				console.log(commonString1, 'frame', commonString2);
 			}
 
 
+			var now = new Date();
+			if (now >= wallTimeAfterWhichToStopOrPauseAnimation) {
+				atLeastOnLimiationMet = true;
+				console.log(commonString1, 'time', commonString2);
+			}
 
-			localPlayingDurationInSeconds = (new Date() - animationStartWallTime) / 1000;
+
+			localPlayingDurationInSeconds = (now - animationStartWallTime) / 1000;
+			if (localPlayingDurationInSeconds >= localDurationAfterWhichToStopOrPauseAnimation) {
+				atLeastOnLimiationMet = true;
+				console.log(commonString1, 'running duration', commonString2);
+			}
+
+
 			localTimeInSeconds = localPlayingDurationInSeconds + timeOffsetInSeconds;
+			if (localTimeInSeconds >= localTimeAfterWhichToStopOrPauseAnimation) {
+				atLeastOnLimiationMet = true;
+				console.log(commonString1, 'local time', commonString2);
+			}
 
-
+			if (atLeastOnLimiationMet) {
+				console.log(
+					'Animation will',
+					shouldPauseWhenAnyLimiationMed ? 'pause' : 'stop',
+					'now.'
+				);
+				if (shouldPauseWhenAnyLimiationMed) {
+					return b_pauseAnimation();
+				} else {
+					return b_stopAnimation();
+				}
+			}
 
 
 			if (animationShouldPause) {
-				b_pauseAnimation();
+				return b_pauseAnimation();
 			}
 
 			b_drawOneFrame();
@@ -575,8 +718,9 @@
 		}
 
 		function _drawOneFrameOnTime(localTimeInSeconds) {
-			_drawOrClearBg.call(thisInstance, localTimeInSeconds)
-				.drawFrame(canvas, canvasContext, localTimeInSeconds);
+			_drawOrClearBg.call(thisInstance, localTimeInSeconds)[
+				pN_drawFrame
+			](canvas, canvasContext, localTimeInSeconds);
 			return thisInstance;
 		}
 
