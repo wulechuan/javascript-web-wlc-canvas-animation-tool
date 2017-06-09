@@ -11,6 +11,8 @@
 	var pN_isJQueryWrappedObject = 'isJQueryWrappedObject';
 	var pN_isValidColor = 'isValidColor';
 
+	var pN_shouldClearCanvasBeforeDrawing = 'shouldClearCanvasBeforeDrawing';
+
 	var pN_animationShouldStop = 'animationShouldStop';
 	var pN_animationIsStopped = 'animationIsStopped';
 	var pN_animationShouldPause = 'animationShouldPause';
@@ -99,6 +101,8 @@
 		// private variables
 		var canvasContext = null;
 		var canvasContextType = settings.canvasDefaultContextType;
+
+		var shouldClearCanvasBeforeDrawing = true;
 		var bgColor = settings.canvasDefaultBgColor;
 
 		var animationShouldStop = false;
@@ -180,7 +184,7 @@
 		var b_startAnimation = startAnimation.bind(thisInstance);
 		var b_pauseAnimation = pauseAnimation.bind(thisInstance);
 		var b_resumeAnimation = resumeAnimation.bind(thisInstance);
-		var b_clearCanvas = clearCanvas.bind(thisInstance);
+		var b_clearCanvas = _clearCanvas.bind(thisInstance);
 		var b_drawOneFrame = drawOneFrame.bind(thisInstance);
 
 
@@ -190,7 +194,6 @@
 		thisInstance.getCanvasContext = getCanvasContext.bind(thisInstance);
 		thisInstance.getCanvasContextType = getCanvasContextType.bind(thisInstance);
 
-		thisInstance.clearCanvas = b_clearCanvas;
 		thisInstance.stopAnimation = b_stopAnimation;
 		thisInstance.startAnimation = b_startAnimation;
 		thisInstance.pauseAnimation = b_pauseAnimation;
@@ -198,6 +201,7 @@
 
 		thisInstance.drawOneFrame = b_drawOneFrame;
 		thisInstance.drawOneFrameOnTime = drawOneFrameOnTimeViaMethod.bind(thisInstance);
+		thisInstance.clearCanvas = clearCanvasViaMethod.bind(thisInstance);
 
 
 
@@ -338,6 +342,17 @@
 				}
 			});
 
+			Object.defineProperty(publicState, pN_shouldClearCanvasBeforeDrawing, {
+				enumerable: true,
+				get: function () {
+					return shouldClearCanvasBeforeDrawing;
+				},
+				set: function (shouldClear) {
+					shouldClearCanvasBeforeDrawing = !!shouldClear;
+					return shouldClearCanvasBeforeDrawing;
+				}
+			});
+
 			Object.defineProperty(publicState, pN_drawingFramesCountLimitation, {
 				enumerable: true,
 				get: function () {
@@ -404,6 +419,10 @@
 				publicState[pN_animationShouldPause] = options[pN_animationShouldPause];
 			}
 
+			if (options.hasOwnProperty(pN_shouldClearCanvasBeforeDrawing)) {
+				publicState[pN_shouldClearCanvasBeforeDrawing] = options[pN_shouldClearCanvasBeforeDrawing];
+			}
+
 			if (options.hasOwnProperty(pN_drawingFramesCountLimitation)) {
 				publicState[pN_drawingFramesCountLimitation] = options[pN_drawingFramesCountLimitation];
 			}
@@ -437,7 +456,7 @@
 			return canvasContextType;
 		}
 
-		function clearCanvas() {
+		function clearCanvasViaMethod() {
 			b_clearCanvas();
 			return b_stopAnimation(); // for chaining method invocations
 		}
@@ -562,12 +581,12 @@
 		}
 
 		function _drawOrClearBg() {
-			if (bgColor === null || bgColor === '' || bgColor === false) {
-				_clearCanvas.call(thisInstance);
-			} else if (bgColor !== 'transparent') {
-				canvasContext.fillStyle = bgColor;
-				canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+			if (shouldClearCanvasBeforeDrawing) {
+				b_clearCanvas();
 			}
+
+			canvasContext.fillStyle = bgColor;
+			canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
 			return thisInstance;
 		}
@@ -583,7 +602,7 @@
 	};
 
 	wlcCanvasAnimationController[pN_isValidColor] = function (color) {
-		return !!color;
+		return typeof color === 'string' || !!color;
 	};
 
 	return wlcCanvasAnimationController;

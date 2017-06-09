@@ -6,6 +6,11 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Try wlc canvas animation tool</title>
     <script src="../build/wlc-canvas-animation-tool.min.js"></script>
+    <style>
+        body{
+            background-color: gray;
+        }
+    </style>
 </head>
 <body>
     <canvas id="my-canvas-1"></canvas>
@@ -15,8 +20,9 @@
     <script>
         window.myAniCtrl = new window.wlcCanvasAnimationController('my-canvas-1',
             {
+                shouldClearCanvasBeforeDrawing: true,
                 drawingFramesCountLimit: 10,
-                bgColor: 'transparent'
+                bgColor: 'black'
             }
         );
 
@@ -26,11 +32,11 @@
 
         setTimeout(function () {
             window.myAniCtrl.startAnimation();
-        }, 2*1000);
+        }, 0);
 
         setTimeout(function () {
             setupRippleAnimation(window.myAniCtrl);
-        }, 8*1000);
+        }, 5*1000);
     </script>
 </body>
 </html>
