@@ -1,7 +1,6 @@
 function drawTurningHand(canvas, ctx, localTimeInSeconds) {
 	ctx.lineWidth   = 3;
 	ctx.strokeStyle = 'red';
-	ctx.fillStyle   = 'pink';
 
 	var t = localTimeInSeconds*3;
 	var centerX = 150;
@@ -12,5 +11,4 @@ function drawTurningHand(canvas, ctx, localTimeInSeconds) {
 	ctx.moveTo(centerX, centerY);
 	ctx.lineTo(centerX - radius * Math.sin(t), centerY + radius * Math.cos(t));
 	ctx.stroke();
-	ctx.fill();
 }

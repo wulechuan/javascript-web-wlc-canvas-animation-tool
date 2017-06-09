@@ -197,7 +197,7 @@
 		thisInstance.resumeAnimation = b_resumeAnimation;
 
 		thisInstance.drawOneFrame = b_drawOneFrame;
-		thisInstance.drawOneFrameOnTime = drawOneFrameOnTimeViaMethod.bind(thisInstance);;
+		thisInstance.drawOneFrameOnTime = drawOneFrameOnTimeViaMethod.bind(thisInstance);
 
 
 
@@ -283,6 +283,28 @@
 		 */
 		function _definePublicState() {
 			var publicState = {};
+
+			Object.defineProperty(publicState, pN_animationIsStopped, {
+				enumerable: true,
+				get: function () {
+					return animationIsStopped;
+				},
+				set: function () {
+					console.warn('state.'+pN_animationIsStopped+' is a read-only property.');
+					return animationIsStopped;
+				}
+			});
+
+			Object.defineProperty(publicState, pN_animationIsPaused, {
+				enumerable: true,
+				get: function () {
+					return animationIsPaused;
+				},
+				set: function () {
+					console.warn('state.'+pN_animationIsPaused+' is a read-only property.');
+					return animationIsPaused;
+				}
+			});
 
 			Object.defineProperty(publicState, pN_animationShouldStop, {
 				enumerable: true,
@@ -441,6 +463,9 @@
 			if (!animationIsPaused && !animationIsStopped) {
 				return thisInstance;
 			}
+
+			animationIsStopped = false;
+			animationIsPaused = false;
 
 			drawnFramesCount = 0;
 			localPlayingDurationInSeconds = 0;
