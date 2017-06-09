@@ -1,5 +1,5 @@
 function drawTurningHand(canvas, ctx, localTimeInSeconds) {
-	ctx.lineWidth   = 2;
+	ctx.lineWidth   = 3;
 	ctx.strokeStyle = 'red';
 	ctx.fillStyle   = 'pink';
 

@@ -4,24 +4,50 @@ const deleteFiles = require('del');
 const renameFiles = require('gulp-rename');
 const sourcemaps = require('gulp-sourcemaps');
 const uglifyJs = require('gulp-uglify');
+const pump = require('pump');
+const pathTool = require('path');
 
 
 
 const sourceGlob = 'source/*.js';
+const shouldUglifyJs = true;
+const targetFolder = 'build';
+
+
+
+
+
+
+
 
 
 gulp.task('clear old build', () => {
-	return deleteFiles('build/**/*')
+	return deleteFiles(pathTool.join(targetFolder, '/**/*'));
 });
 
-gulp.task('build: js', () => {
-	return gulp.src(sourceGlob)
-		.pipe(sourcemaps.init())
-		.pipe(uglifyJs())
-		.pipe(renameFiles({suffix: '.min'}))
-		.pipe(sourcemaps.write('.'))
-		.pipe(gulp.dest('build'))
-		;
+gulp.task('build: js', (onThisTaskDone) => {
+	var actionsToTake = [
+		gulp.src(sourceGlob)
+	];
+
+	if (shouldUglifyJs) {
+		actionsToTake.concat([
+			sourcemaps.init(),
+			uglifyJs()
+		]);
+	}
+
+	actionsToTake.push(renameFiles({suffix: '.min'}));
+
+	if (shouldUglifyJs) {
+		actionsToTake.push(
+			sourcemaps.write('.')
+		);
+	}
+
+	actionsToTake.push(gulp.dest(targetFolder));
+
+	pump(actionsToTake, onThisTaskDone);
 });
 
 gulp.task('build: all', (onThisTaskDone) => {

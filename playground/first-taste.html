@@ -15,8 +15,8 @@
     <script>
         window.myAniCtrl = new window.wlcCanvasAnimationController('my-canvas-1',
             {
-                drawingFramesCountLimit: NaN,
-                defaultBgColor: 'black'
+                drawingFramesCountLimit: 10,
+                bgColor: 'transparent'
             }
         );
 
@@ -24,11 +24,13 @@
             drawFrame: window.drawTurningHand
         });
 
-         window.myAniCtrl.startAnimation();
+        setTimeout(function () {
+            window.myAniCtrl.startAnimation();
+        }, 0*1000);
 
         setTimeout(function () {
             setupRippleAnimation(window.myAniCtrl);
-        },5000);
+        }, 25*1000);
     </script>
 </body>
 </html>

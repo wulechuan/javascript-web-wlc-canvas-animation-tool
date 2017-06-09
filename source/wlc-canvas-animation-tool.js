@@ -82,16 +82,19 @@
 				// canvasContext: null,
 			},
 			state: {
-				animationStartWallTime: NaN,
-				drawnFramesCount: 0,
 				animationIsStopped: true,
-				animationIsPaused: false
+				animationIsPaused: false,
+
+				animationStartWallTime: NaN,
+				localPlayingDurationInSeconds: 0,
+				timeOffsetInSeconds: 0,
+
+				drawnFramesCount: 0
 			}
 		};
 
 		var state = {
 			drawingFramesCountLimitation: NaN, // In case we need to draw like 1000 frames and then stop there for ever
-			timeOffset: 0 // in milliseconds
 		};
 
 
@@ -195,7 +198,7 @@
 		thisInstance.drawOneFrameOnTime = drawOneFrameOnTimeViaMethod.bind(thisInstance);
 
 		var boundMethods = {
-			drawNextFrame: _drawNextFrame.bind(this)
+			drawNextFrame: _drawNextFrame.bind(thisInstance)
 		};
 
 
@@ -256,9 +259,9 @@
 
 
 
-			_inputTemp = parseFloat(options.timeOffset);
+			_inputTemp = parseFloat(options.timeOffsetInSeconds);
 			if (!isNaN(_inputTemp)) {
-				state.timeOffset = _inputTemp;
+				privateData.state.timeOffsetInSeconds = _inputTemp;
 			}
 
 
@@ -327,7 +330,7 @@
 			return thisInstance; // for chaining invocations
 		}
 
-		function startAnimation(shouldClearCanvasBeforeDrawing) {
+		function startAnimation(timeOffsetInSeconds) {
 			var privateState = privateData.state;
 			if (privateState[animationIsPaused] === false && privateState[animationIsStopped] === false) {
 				return thisInstance;
@@ -336,10 +339,17 @@
 			privateState[animationIsPaused] = false;
 			privateState[animationIsStopped] = false;
 
-			privateState.animationStartWallTime = new Date().getTime() - state.timeOffset;
+			privateState.animationStartWallTime = new Date().getTime() - privateState.timeOffsetInSeconds;
 			privateState.drawnFramesCount = 0;
+			privateState.localPlayingDurationInSeconds = 0;
 
-			boundMethods.drawNextFrame(shouldClearCanvasBeforeDrawing);
+			if (timeOffsetInSeconds) {
+				config.call(thisInstance, {
+					timeOffsetInSeconds: timeOffsetInSeconds
+				});
+			}
+
+			_drawNextFrame.call(thisInstance);
 
 			return thisInstance; // for chaining invocations
 		}
@@ -358,14 +368,13 @@
 			if (privateState[animationIsStopped] === true || privateState[animationIsPaused] === false) return;
 
 			privateState[animationIsPaused] = false;
-			boundMethods.drawNextFrame();
+			_drawNextFrame.call(thisInstance);
 
 			return thisInstance; // for chaining invocations
 		}
 
 		function drawOneFrame() {
-			var localTimeInSeconds = (new Date().getTime() - privateData.state.animationStartWallTime) / 1000;
-			return _drawOneFrameOnTime.call(thisInstance, localTimeInSeconds);
+			return _drawOneFrameOnTime.call(thisInstance, privateData.state.localTimeInSeconds);
 		}
 
 		function drawOneFrameOnTimeViaMethod(localTimeInSeconds) {
@@ -381,7 +390,10 @@
 				);
 		}
 
-		function _drawNextFrame(shouldClearCanvasBeforeDrawing) {
+		function _drawNextFrame(/* DOMHighResTimeStamp */) {
+			// The "DOMHighResTimeStamp" provided by the browser
+			// is more accurate but NOT what I want.
+
 			var privateState = privateData.state;
 			if (   privateState[animationIsPaused] === true
 				|| privateState[animationIsStopped] === true
@@ -391,16 +403,12 @@
 
 			if (typeof thisInstance.drawFrame !== 'function') {
 				console.info(
-					'The drawFrame "method" is not provided yet.',
+					'The "drawFrame" method is not provided yet.',
 					'Animation will not start.'
 				);
 				thisInstance.stopAnimation();
 				return;
 			}
-
-			// I'd like to clear canvas also *BEFORE* checking the "drawnFramesCount".
-			if (shouldClearCanvasBeforeDrawing) thisInstance.clearCanvas();
-
 
 			privateState.drawnFramesCount++;
 			if (privateState.drawnFramesCount > state.drawingFramesCountLimitation) {
@@ -409,7 +417,12 @@
 				return;
 			}
 
-			thisInstance.drawOneFrame();
+			privateState.localPlayingDurationInSeconds =
+				(new Date() - privateData.state.animationStartWallTime) / 1000;
+
+			privateState.localTimeInSeconds = privateState.localPlayingDurationInSeconds + privateState.timeOffsetInSeconds;
+
+			drawOneFrame.call(thisInstance);
 
 			requestAnimationFrame(boundMethods.drawNextFrame);
 		}
@@ -420,7 +433,7 @@
 
 			if (state.bgColor === null || state.bgColor === '' || state.bgColor === false) {
 				_clearCanvas.call(thisInstance);
-			} else {
+			} else if (state.bgColor !== 'transparent') {
 				ctx.fillStyle = state.bgColor;
 				ctx.fillRect(0, 0, canvas.width, canvas.height);
 			}
@@ -435,7 +448,7 @@
 	};
 
 	wlcCanvasAnimationController[isJQueryWrappedObject] = function (object) {
-		return !!Object.__proto__.jquery;
+		return !!object.__proto__.jquery;
 	};
 
 	wlcCanvasAnimationController[isValidColor] = function (color) {
