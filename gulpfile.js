@@ -31,18 +31,14 @@ gulp.task('build: js', (onThisTaskDone) => {
 	];
 
 	if (shouldUglifyJs) {
-		actionsToTake.concat([
-			sourcemaps.init(),
-			uglifyJs()
-		]);
+		actionsToTake.push(sourcemaps.init());
+		actionsToTake.push(uglifyJs());
 	}
 
 	actionsToTake.push(renameFiles({suffix: '.min'}));
 
 	if (shouldUglifyJs) {
-		actionsToTake.push(
-			sourcemaps.write('.')
-		);
+		actionsToTake.push(sourcemaps.write('.'));
 	}
 
 	actionsToTake.push(gulp.dest(targetFolder));
