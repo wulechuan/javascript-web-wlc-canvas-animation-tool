@@ -23,8 +23,10 @@
 
 	var pN_timeOffsetInSeconds = 'timeOffsetInSeconds';
 
+	var pN_wallTimeOfLatestPause = 'wallTimeOfLatestPause';
+	var pN_wallTimeOfLatestResume = 'wallTimeOfLatestResume';
+
 	var pN_shouldPauseButNotStopWhenAnyLimiationMet = 'shouldPauseButNotStopWhenAnyLimiationMet';
-	var pN_localDurationBeyondWhichToStopOrPauseAnimation = 'localDurationBeyondWhichToStopOrPauseAnimation'; // in seconds
 	var pN_localTimeAfterWhichToStopOrPauseAnimation = 'localTimeAfterWhichToStopOrPauseAnimation'; // in seconds
 	var pN_wallTimeAfterWhichToStopOrPauseAnimation = 'wallTimeAfterWhichToStopOrPauseAnimation'; // in milliseconds
 	var pN_drawingFramesCountLimitation = 'drawingFramesCountLimitation';
@@ -121,16 +123,15 @@
 		var timeOffsetInSeconds = 0;
 
 		var shouldPauseButNotStopWhenAnyLimiationMet = false; // "true" means should stop instead of pause.
-		var localDurationBeyondWhichToStopOrPauseAnimation = NaN;
 		var localTimeAfterWhichToStopOrPauseAnimation = NaN;
 		var wallTimeAfterWhichToStopOrPauseAnimation = NaN;
 		var drawingFramesCountLimitation = NaN; // In case we need to draw like 1000 frames and then stop there for ever
 
 
 		// internal derived values
-		var limiationThatCausePauseOrStop = '';
 		var animationStartWallTime = NaN;
-		var localPlayingDurationInSeconds = 0;
+		var wallTimeOfLatestPause = NaN;
+		var wallTimeOfLatestResume = NaN;
 		var localTimeInSeconds = 0;
 		var drawnFramesCount = 0;
 
@@ -273,6 +274,26 @@
 		 * @return {object}
 		 */
 		function getData() {
+			var stateCopy = {
+				animationStartWallTime: animationStartWallTime,
+				localTimeInSeconds: localTimeInSeconds,
+				drawnFramesCount: drawnFramesCount
+			};
+
+			stateCopy[pN_shouldClearCanvasBeforeDrawing] = shouldClearCanvasBeforeDrawing;
+			stateCopy[pN_bgColor] = bgColor;
+			stateCopy[pN_animationShouldStop] = animationShouldStop;
+			stateCopy[pN_animationIsStopped] = animationIsStopped;
+			stateCopy[pN_animationShouldPause] = animationShouldPause;
+			stateCopy[pN_animationIsPaused] = animationIsPaused;
+			stateCopy[pN_timeOffsetInSeconds] = timeOffsetInSeconds;
+			stateCopy[pN_wallTimeOfLatestPause] = wallTimeOfLatestPause;
+			stateCopy[pN_wallTimeOfLatestResume] = wallTimeOfLatestResume;
+			stateCopy[pN_shouldPauseButNotStopWhenAnyLimiationMet] = shouldPauseButNotStopWhenAnyLimiationMet;
+			stateCopy[pN_localTimeAfterWhichToStopOrPauseAnimation] = localTimeAfterWhichToStopOrPauseAnimation;
+			stateCopy[pN_wallTimeAfterWhichToStopOrPauseAnimation] = wallTimeAfterWhichToStopOrPauseAnimation;
+			stateCopy[pN_drawingFramesCountLimitation] = drawingFramesCountLimitation;
+
 			return {
 				elements: {
 					canvas: canvas
@@ -281,31 +302,7 @@
 					canvasContext: canvasContext,
 					canvasContextType: canvasContextType
 				},
-				state: {
-					shouldClearCanvasBeforeDrawing: shouldClearCanvasBeforeDrawing,
-					bgColor: bgColor,
-
-					animationShouldStop: animationShouldStop,
-					animationIsStopped: animationIsStopped,
-					animationShouldPause: animationShouldPause,
-					animationIsPaused: animationIsPaused,
-
-					timeOffsetInSeconds: timeOffsetInSeconds,
-
-					shouldPauseButNotStopWhenAnyLimiationMet: shouldPauseButNotStopWhenAnyLimiationMet,
-					localTimeAfterWhichToStopOrPauseAnimation: localTimeAfterWhichToStopOrPauseAnimation,
-					localDurationBeyondWhichToStopOrPauseAnimation: localDurationBeyondWhichToStopOrPauseAnimation,
-					wallTimeAfterWhichToStopOrPauseAnimation: wallTimeAfterWhichToStopOrPauseAnimation,
-					drawingFramesCountLimitation: drawingFramesCountLimitation,
-
-					limiationThatCausePauseOrStop: limiationThatCausePauseOrStop,
-
-					// internal derived values
-					animationStartWallTime: animationStartWallTime,
-					localPlayingDurationInSeconds: localPlayingDurationInSeconds,
-					localTimeInSeconds: localTimeInSeconds,
-					drawnFramesCount: drawnFramesCount
-				}
+				state: stateCopy
 			};
 		}
 
@@ -422,21 +419,6 @@
 				}
 			});
 
-			Object.defineProperty(publicState, pN_localDurationBeyondWhichToStopOrPauseAnimation, {
-				enumerable: true,
-				get: function () {
-					return localDurationBeyondWhichToStopOrPauseAnimation;
-				},
-				set: function (durationLimitation) {
-					durationLimitation = parseFloat(durationLimitation);
-					if (!isNaN(durationLimitation) && durationLimitation>=0) {
-						localDurationBeyondWhichToStopOrPauseAnimation = durationLimitation;
-					}
-
-					return localDurationBeyondWhichToStopOrPauseAnimation;
-				}
-			});
-
 			Object.defineProperty(publicState, pN_localTimeAfterWhichToStopOrPauseAnimation, {
 				enumerable: true,
 				get: function () {
@@ -539,11 +521,6 @@
 					options[pN_localTimeAfterWhichToStopOrPauseAnimation];
 			}
 
-			if (options.hasOwnProperty(pN_localDurationBeyondWhichToStopOrPauseAnimation)) {
-				publicState[pN_localDurationBeyondWhichToStopOrPauseAnimation] =
-					options[pN_localDurationBeyondWhichToStopOrPauseAnimation];
-			}
-
 			if (options.hasOwnProperty(pN_wallTimeAfterWhichToStopOrPauseAnimation)) {
 				publicState[pN_wallTimeAfterWhichToStopOrPauseAnimation] =
 					options[pN_wallTimeAfterWhichToStopOrPauseAnimation];
@@ -604,8 +581,10 @@
 			animationIsStopped = false;
 			animationIsPaused = false;
 
+			wallTimeOfLatestPause = NaN;
+			wallTimeOfLatestResume = NaN;
+
 			drawnFramesCount = 0;
-			localPlayingDurationInSeconds = 0;
 
 			// Set twice, if the second value (which is the argument) is invalid and not taken
 			// Then the first value (which is zero) takes effects.
@@ -627,6 +606,7 @@
 
 			animationIsPaused = true;
 			animationShouldPause = false;
+			wallTimeOfLatestPause = new Date() + 0;
 
 			return thisInstance; // for chaining method invocations
 		}
@@ -634,6 +614,8 @@
 		function resumeAnimation() {
 			if (animationIsStopped || !animationIsPaused) return;
 
+			wallTimeOfLatestResume = new Date() + 0;
+			timeOffsetInSeconds -= (wallTimeOfLatestResume - wallTimeOfLatestPause) / 1000;
 			animationIsPaused = false;
 			b_drawNextFrame();
 
@@ -676,7 +658,7 @@
 			}
 
 
-			var now = new Date();
+			var now = +new Date();
 			if (now >= wallTimeAfterWhichToStopOrPauseAnimation) {
 				atLeastOnLimiationMet = true;
 				wallTimeAfterWhichToStopOrPauseAnimation = NaN;
@@ -684,15 +666,7 @@
 			}
 
 
-			localPlayingDurationInSeconds = (now - animationStartWallTime) / 1000;
-			if (localPlayingDurationInSeconds >= localDurationBeyondWhichToStopOrPauseAnimation) {
-				atLeastOnLimiationMet = true;
-				localDurationBeyondWhichToStopOrPauseAnimation = NaN;
-				console.log(commonString1, 'running duration', commonString2);
-			}
-
-
-			localTimeInSeconds = localPlayingDurationInSeconds + timeOffsetInSeconds;
+			localTimeInSeconds = (now - animationStartWallTime) / 1000 + timeOffsetInSeconds;
 			if (localTimeInSeconds >= localTimeAfterWhichToStopOrPauseAnimation) {
 				atLeastOnLimiationMet = true;
 				localTimeAfterWhichToStopOrPauseAnimation = NaN;
