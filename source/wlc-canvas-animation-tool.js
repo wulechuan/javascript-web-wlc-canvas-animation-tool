@@ -23,7 +23,7 @@
 
 	var pN_timeOffsetInSeconds = 'timeOffsetInSeconds';
 
-	var pN_shouldPauseButNotStopWhenAnyLimiationMed = 'shouldPauseButNotStopWhenAnyLimiationMed';
+	var pN_shouldPauseButNotStopWhenAnyLimiationMet = 'shouldPauseButNotStopWhenAnyLimiationMet';
 	var pN_localDurationBeyondWhichToStopOrPauseAnimation = 'localDurationBeyondWhichToStopOrPauseAnimation'; // in seconds
 	var pN_localTimeAfterWhichToStopOrPauseAnimation = 'localTimeAfterWhichToStopOrPauseAnimation'; // in seconds
 	var pN_wallTimeAfterWhichToStopOrPauseAnimation = 'wallTimeAfterWhichToStopOrPauseAnimation'; // in milliseconds
@@ -120,7 +120,7 @@
 
 		var timeOffsetInSeconds = 0;
 
-		var shouldPauseButNotStopWhenAnyLimiationMed = false; // "true" means should stop instead of pause.
+		var shouldPauseButNotStopWhenAnyLimiationMet = false; // "true" means should stop instead of pause.
 		var localDurationBeyondWhichToStopOrPauseAnimation = NaN;
 		var localTimeAfterWhichToStopOrPauseAnimation = NaN;
 		var wallTimeAfterWhichToStopOrPauseAnimation = NaN;
@@ -292,7 +292,7 @@
 
 					timeOffsetInSeconds: timeOffsetInSeconds,
 
-					shouldPauseButNotStopWhenAnyLimiationMed: shouldPauseButNotStopWhenAnyLimiationMed,
+					shouldPauseButNotStopWhenAnyLimiationMet: shouldPauseButNotStopWhenAnyLimiationMet,
 					localTimeAfterWhichToStopOrPauseAnimation: localTimeAfterWhichToStopOrPauseAnimation,
 					localDurationBeyondWhichToStopOrPauseAnimation: localDurationBeyondWhichToStopOrPauseAnimation,
 					wallTimeAfterWhichToStopOrPauseAnimation: wallTimeAfterWhichToStopOrPauseAnimation,
@@ -411,14 +411,14 @@
 				}
 			});
 
-			Object.defineProperty(publicState, pN_shouldPauseButNotStopWhenAnyLimiationMed, {
+			Object.defineProperty(publicState, pN_shouldPauseButNotStopWhenAnyLimiationMet, {
 				enumerable: true,
 				get: function () {
-					return shouldPauseButNotStopWhenAnyLimiationMed;
+					return shouldPauseButNotStopWhenAnyLimiationMet;
 				},
 				set: function (shouldPauseInsteadOfStop) {
-					shouldPauseButNotStopWhenAnyLimiationMed = !!shouldPauseInsteadOfStop;
-					return shouldPauseButNotStopWhenAnyLimiationMed;
+					shouldPauseButNotStopWhenAnyLimiationMet = !!shouldPauseInsteadOfStop;
+					return shouldPauseButNotStopWhenAnyLimiationMet;
 				}
 			});
 
@@ -529,9 +529,9 @@
 					options[pN_timeOffsetInSeconds];
 			}
 
-			if (options.hasOwnProperty(pN_shouldPauseButNotStopWhenAnyLimiationMed)) {
-				publicState[pN_shouldPauseButNotStopWhenAnyLimiationMed] =
-					options[pN_shouldPauseButNotStopWhenAnyLimiationMed];
+			if (options.hasOwnProperty(pN_shouldPauseButNotStopWhenAnyLimiationMet)) {
+				publicState[pN_shouldPauseButNotStopWhenAnyLimiationMet] =
+					options[pN_shouldPauseButNotStopWhenAnyLimiationMet];
 			}
 
 			if (options.hasOwnProperty(pN_localTimeAfterWhichToStopOrPauseAnimation)) {
@@ -702,10 +702,10 @@
 			if (atLeastOnLimiationMet) {
 				console.log(
 					'Animation will',
-					shouldPauseButNotStopWhenAnyLimiationMed ? 'pause' : 'stop',
+					shouldPauseButNotStopWhenAnyLimiationMet ? 'pause' : 'stop',
 					'now.'
 				);
-				if (shouldPauseButNotStopWhenAnyLimiationMed) {
+				if (shouldPauseButNotStopWhenAnyLimiationMet) {
 					return b_pauseAnimation();
 				} else {
 					return b_stopAnimation();
