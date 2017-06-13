@@ -725,7 +725,7 @@
 			if (bgColor && bgColor !== 'transparent') {
 				canvasContext.fillStyle = bgColor;
 				canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-            }
+			}
 
 			return thisInstance;
 		}
