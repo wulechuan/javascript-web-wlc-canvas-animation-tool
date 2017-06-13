@@ -732,11 +732,12 @@
 
 	wlcCanvasAnimationController[pN_isJQueryWrappedObjectOrAlike] = function (object) {
 		return wlcCanvasAnimationController[pN_isJQueryWrappedObject](object)
-			|| object[0] instanceof Node;
+			|| (!!object && !!object[0] && object[0] instanceof Node);
 	};
 
 	wlcCanvasAnimationController[pN_isJQueryWrappedObject] = function (object) {
-		return !!object.__proto__.jquery;
+		var prototype = Object.getPrototypeOf(object);
+		return !!prototype && !!prototype.jquery;
 	};
 
 	wlcCanvasAnimationController[pN_isValidColor] = function (color) {
