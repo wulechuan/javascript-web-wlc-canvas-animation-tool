@@ -1,7 +1,6 @@
 (function (createWhatWeWant) {
 	window.wlcCanvasAnimationController = createWhatWeWant();
 })(function createWhatWeWant() {
-
 	// To define some long property names this way helps js better minified.
 	// Because we are using local variables as keys to access properties,
 	// and local variables can be minified,
@@ -706,15 +705,15 @@
 			return _drawOneFrameOnTime.call(thisInstance, localTimeInSeconds);
 		}
 
-		function drawOneFrameOnTimeViaMethod(localTimeInSeconds) {
-			_drawOneFrameOnTime.call(thisInstance, localTimeInSeconds);
+		function drawOneFrameOnTimeViaMethod(desiredTimeInSeconds) {
+			_drawOneFrameOnTime.call(thisInstance, desiredTimeInSeconds);
 			return pauseAnimation.call(thisInstance); // for chaining method invocations
 		}
 
-		function _drawOneFrameOnTime(localTimeInSeconds) {
-			_drawOrClearBg.call(thisInstance, localTimeInSeconds)[
+		function _drawOneFrameOnTime(timeInSeconds) {
+			_drawOrClearBg.call(thisInstance, timeInSeconds)[
 				pN_drawFrame
-			](canvas, canvasContext, localTimeInSeconds);
+			](canvas, canvasContext, timeInSeconds);
 			return thisInstance;
 		}
 
@@ -723,8 +722,10 @@
 				b_clearCanvas();
 			}
 
-			canvasContext.fillStyle = bgColor;
-			canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+			if (bgColor && bgColor !== 'transparent') {
+				canvasContext.fillStyle = bgColor;
+				canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+            }
 
 			return thisInstance;
 		}
